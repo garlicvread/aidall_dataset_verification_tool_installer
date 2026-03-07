@@ -155,11 +155,13 @@ if exist "%USERPROFILE%\miniconda3" (
        echo.
    )
    
-   rmdir /s /q "%USERPROFILE%\miniconda3"
-   if errorlevel 1 (
-       call :printslow "[ERROR] Miniconda 디렉토리 삭제 실패"
-       call :log "[ERROR] Miniconda 디렉토리 삭제 실패"
-       exit /b 1
+   if exist "%USERPROFILE%\miniconda3" (
+       rmdir /s /q "%USERPROFILE%\miniconda3"
+       if errorlevel 1 (
+           call :printslow "[ERROR] Miniconda 디렉토리 삭제 실패"
+           call :log "[ERROR] Miniconda 디렉토리 삭제 실패"
+           exit /b 1
+       )
    )
    call :printslow "[INFO] 기존 Miniconda 제거 완료"
    call :log "[INFO] Miniconda 제거 완료"
@@ -204,11 +206,13 @@ if exist "C:\ProgramData\miniconda3" (
        echo.
    )
    
-   rmdir /s /q "C:\ProgramData\miniconda3"
-   if errorlevel 1 (
-       call :printslow "[ERROR] Miniconda 디렉토리 삭제 실패"
-       call :log "[ERROR] Miniconda 디렉토리 삭제 실패"
-       exit /b 1
+   if exist "C:\ProgramData\miniconda3" (
+       rmdir /s /q "C:\ProgramData\miniconda3"
+       if errorlevel 1 (
+           call :printslow "[ERROR] Miniconda 디렉토리 삭제 실패"
+           call :log "[ERROR] Miniconda 디렉토리 삭제 실패"
+           exit /b 1
+       )
    )
    call :printslow "[INFO] 기존 Miniconda 제거 완료"
    call :log "[INFO] Miniconda 제거 완료"
