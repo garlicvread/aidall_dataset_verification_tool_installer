@@ -8,10 +8,14 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  actions: read
 
 jobs:
   build:
     runs-on: windows-latest
+    outputs:
+      artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
 
     steps:
       - name: Checkout
@@ -28,14 +32,63 @@ jobs:
       - name: Build exe with PyInstaller
         run: pyinstaller installer.spec
 
-      - name: Upload artifact
+      - name: Upload unsigned artifact
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: AidALL_Installer_unsigned
+          path: dist/AidALL_Installer.exe
+
+  sign:
+    needs: build
+    runs-on: ubuntu-latest
+    if: vars.SIGNPATH_ORGANIZATION_ID != ''
+
+    steps:
+      - name: Download unsigned artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: AidALL_Installer_unsigned
+          path: unsigned
+
+      - name: Submit signing request
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_SLUG }}
+          github-artifact-id: ${{ needs.build.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Upload signed artifact
         uses: actions/upload-artifact@v4
         with:
           name: AidALL_Installer
-          path: dist/AidALL_Installer.exe
+          path: signed/AidALL_Installer.exe
 
       - name: Create Release (on tag push)
         if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: signed/AidALL_Installer.exe
+          generate_release_notes: true
+
+  release-unsigned:
+    needs: build
+    runs-on: ubuntu-latest
+    if: vars.SIGNPATH_ORGANIZATION_ID == '' && startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download unsigned artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: AidALL_Installer_unsigned
+          path: dist
+
+      - name: Create Release (unsigned)
         uses: softprops/action-gh-release@v2
         with:
           files: dist/AidALL_Installer.exe
