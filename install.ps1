@@ -59,7 +59,7 @@ function Show-AsciiArt {
                 Write-Host ""
             }
         }
-        Start-Sleep -Milliseconds 50
+        Start-Sleep -Milliseconds 25
     }
     Clear-Host
 }
@@ -234,14 +234,18 @@ if (-not (Test-Path $condaExe)) {
 }
 
 Write-Slow "[INFO] Miniconda 설치 완료"
-& $condaExe --version
+$ErrorActionPreference = "Continue"
+& $condaExe --version 2>&1 | ForEach-Object { Write-Host $_ }
+$ErrorActionPreference = "Stop"
 Write-Host ""
 
 # --- Conda 가상환경 생성 ---
 Write-Slow "[INFO] Conda 가상환경을 생성합니다..."
 
 $activate = "$MinicondaUser\Scripts\activate.bat"
-& cmd /c "call `"$activate`" && conda create -n verify_results python=3.12 -y"
+$ErrorActionPreference = "Continue"
+& cmd /c "call `"$activate`" && conda create -n verify_results python=3.12 -y" 2>&1 | ForEach-Object { Write-Host $_ }
+$ErrorActionPreference = "Stop"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Conda 가상환경 생성 실패" -ForegroundColor Red
     exit 1
@@ -254,7 +258,9 @@ Write-Host ""
 # --- LabelMe 설치 ---
 Write-Slow "[INFO] Labelme를 설치합니다..."
 
-& cmd /c "call `"$activate`" verify_results && pip install labelme"
+$ErrorActionPreference = "Continue"
+& cmd /c "call `"$activate`" verify_results && pip install labelme" 2>&1 | ForEach-Object { Write-Host $_ }
+$ErrorActionPreference = "Stop"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Labelme 설치 실패" -ForegroundColor Red
     exit 1
@@ -266,7 +272,9 @@ Write-Host ""
 Write-Slow "[INFO] 데이터셋 다운로드를 시작합니다..."
 Write-Slow "       데이터셋 크기는 약 60GB 정도입니다."
 
-& cmd /c "call `"$activate`" verify_results && pip install -U gdown --quiet && cd /d `"$AidALLDir`" && gdown --folder $GDriveFolderURL"
+$ErrorActionPreference = "Continue"
+& cmd /c "call `"$activate`" verify_results && pip install -U gdown --quiet && cd /d `"$AidALLDir`" && gdown --folder $GDriveFolderURL" 2>&1 | ForEach-Object { Write-Host $_ }
+$ErrorActionPreference = "Stop"
 if ($LASTEXITCODE -ne 0) {
     Write-Log "[WARN] Google Drive 자동 다운로드 실패"
     Write-Slow "[INFO] 웹 브라우저를 통해 직접 다운로드해 주시기 바랍니다."
