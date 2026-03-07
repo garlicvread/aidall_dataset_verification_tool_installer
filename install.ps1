@@ -64,6 +64,8 @@ function Show-AsciiArt {
     Clear-Host
 }
 
+$installCancelled = $false
+
 try {
 
 # --- 메인 설치 ---
@@ -97,7 +99,8 @@ Write-Host ""
 $confirm = Read-Host "설치를 시작하시겠습니까? (Y/N)"
 if ($confirm -ne "Y" -and $confirm -ne "y") {
     Write-Log "[INFO] 사용자가 설치를 취소했습니다."
-    exit 0
+    $installCancelled = $true
+    throw "USER_CANCEL"
 }
 
 # --- 기존 Miniconda 확인 ---
@@ -117,7 +120,8 @@ if ($minicondaPaths.Count -gt 0) {
     if ($remove -ne "Y" -and $remove -ne "y") {
         Write-Log "[INFO] 사용자가 기존 Miniconda 제거를 거부했습니다."
         Write-Slow "[INFO] 설치를 중단합니다."
-        exit 0
+        $installCancelled = $true
+        throw "USER_CANCEL"
     }
     Write-Log "[INFO] 사용자가 기존 Miniconda 제거에 동의했습니다."
 
@@ -156,9 +160,7 @@ if ($minicondaPaths.Count -gt 0) {
                         Write-Log "[WARN] 삭제 재시도 $i/$retries (대기 3초)..."
                         Start-Sleep -Seconds 3
                     } else {
-                        Write-Host "[ERROR] 디렉토리 삭제 실패: $_" -ForegroundColor Red
-                        Write-Log "[ERROR] 디렉토리 삭제 실패: $_"
-                        exit 1
+                        throw "디렉토리 삭제 실패: $_"
                     }
                 }
             }
@@ -177,9 +179,7 @@ try {
     $ProgressPreference = 'Continue'
     Write-Slow "[INFO] Miniconda 다운로드 완료"
 } catch {
-    Write-Host "[ERROR] Miniconda 다운로드 실패: $_" -ForegroundColor Red
-    Write-Slow "인터넷 연결을 확인해 주십시오."
-    exit 1
+    throw "Miniconda 다운로드 실패: $_`n인터넷 연결을 확인해 주십시오."
 }
 
 # --- Miniconda 설치 ---
@@ -211,13 +211,12 @@ while (-not $proc.HasExited) {
 Write-Host ""
 
 if ($proc.ExitCode -ne 0) {
-    Write-Host "[ERROR] Miniconda 설치 실패 (exit code: $($proc.ExitCode))" -ForegroundColor Red
-    exit 1
+    throw "Miniconda 설치 실패 (exit code: $($proc.ExitCode))"
 }
 
 # 설치 파일 정리
 if (Test-Path $MinicondaInstaller) {
-    Remove-Item $MinicondaInstaller -Force
+    Remove-Item $MinicondaInstaller -Force -ErrorAction SilentlyContinue
 }
 
 # conda 확인
@@ -230,9 +229,7 @@ while (-not (Test-Path $condaExe) -and $waited -lt 30) {
 }
 
 if (-not (Test-Path $condaExe)) {
-    Write-Host "[ERROR] Miniconda 설치 확인 실패: conda.exe를 찾을 수 없습니다." -ForegroundColor Red
-    Write-Log "[ERROR] 확인 경로: $condaExe"
-    exit 1
+    throw "Miniconda 설치 확인 실패: conda.exe를 찾을 수 없습니다.`n확인 경로: $condaExe"
 }
 
 Write-Slow "[INFO] Miniconda 설치 완료"
@@ -248,8 +245,7 @@ while (-not (Test-Path $activate) -and $waited -lt 15) {
     $waited += 3
 }
 if (-not (Test-Path $activate)) {
-    Write-Host "[ERROR] activate.bat를 찾을 수 없습니다." -ForegroundColor Red
-    exit 1
+    throw "activate.bat를 찾을 수 없습니다."
 }
 
 # --- Conda 가상환경 생성 ---
@@ -257,8 +253,7 @@ Write-Slow "[INFO] Conda 가상환경을 생성합니다..."
 
 & cmd /c "call `"$activate`" && conda create -n verify_results python=3.12 -y"
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "[ERROR] Conda 가상환경 생성 실패" -ForegroundColor Red
-    exit 1
+    throw "Conda 가상환경 생성 실패"
 }
 
 Write-Slow "[INFO] Conda 가상환경 'verify_results' 생성 완료"
@@ -270,8 +265,7 @@ Write-Slow "[INFO] Labelme를 설치합니다..."
 
 & cmd /c "call `"$activate`" verify_results && pip install labelme"
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "[ERROR] Labelme 설치 실패" -ForegroundColor Red
-    exit 1
+    throw "Labelme 설치 실패"
 }
 Write-Slow "[INFO] Labelme 설치 완료"
 Write-Host ""
@@ -321,11 +315,12 @@ Write-Host ""
 Write-Slow "[INFO] 모든 프로세스가 정상적으로 완료되었습니다."
 
 } catch {
-    Write-Host ""
-    Write-Host "[FATAL ERROR] $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "[위치] Line $($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
-    Write-Host ""
-    Write-Log "[FATAL] $($_.Exception.Message)"
+    if (-not $installCancelled) {
+        Write-Host ""
+        Write-Host "[ERROR] $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host ""
+        Write-Log "[ERROR] $($_.Exception.Message)"
+    }
 }
 
 Write-Host ""
