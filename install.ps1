@@ -248,6 +248,10 @@ if (-not (Test-Path $activate)) {
     throw "activate.bat를 찾을 수 없습니다."
 }
 
+# --- Conda ToS 수락 ---
+Write-Slow "[INFO] Conda 이용약관에 동의합니다..."
+& cmd /c "call `"$activate`" && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/msys2"
+
 # --- Conda 가상환경 생성 ---
 Write-Slow "[INFO] Conda 가상환경을 생성합니다..."
 
@@ -324,6 +328,5 @@ Write-Slow "[INFO] 모든 프로세스가 정상적으로 완료되었습니다.
 }
 
 Write-Host ""
-Write-Host "명령 프롬프트를 닫으시려면 아무 키나 눌러 주십시오." -ForegroundColor White
-Write-Host "Press any key to close..." -ForegroundColor White
-try { $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") } catch { Read-Host }
+Write-Host "창을 닫으시려면 Enter 키를 눌러 주세요." -ForegroundColor White
+Read-Host
