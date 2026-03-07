@@ -407,14 +407,16 @@ class InstallerApp:
             uninstaller = os.path.join(path, "Uninstall-Miniconda3.exe")
             if os.path.isfile(uninstaller):
                 self.log(f"Miniconda Uninstaller 실행: {path}")
-                success = self._run_cmd(
-                    f'start /wait "" "{uninstaller}" /S',
-                    description=f"Miniconda Uninstaller로 제거 시도...",
-                )
-                if not success:
-                    self.log("Uninstaller 실행 실패", "ERROR")
+                self.log("Miniconda Uninstaller로 제거 시도...")
+                try:
+                    subprocess.run(
+                        [uninstaller, "/S"],
+                        capture_output=True,
+                        timeout=300,
+                    )
+                except Exception as e:
+                    self.log(f"Uninstaller 실행 실패: {e}", "ERROR")
                     return False
-                import time
                 time.sleep(5)
 
             if os.path.isdir(path):
@@ -453,23 +455,41 @@ class InstallerApp:
     def _step_install_miniconda(self):
         self.log("Miniconda를 설치합니다... (수 분이 소요될 수 있습니다)")
 
-        success = self._run_cmd(
-            f'start /wait "" "{MINICONDA_INSTALLER}" /S',
-            description="Miniconda 사일런트 설치 실행 중...",
-        )
+        # subprocess.run으로 직접 실행 (start /wait 대신)
+        try:
+            result = subprocess.run(
+                [MINICONDA_INSTALLER, "/S"],
+                capture_output=True,
+                text=True,
+                timeout=600,
+                encoding="utf-8",
+                errors="replace",
+            )
+            if result.returncode != 0:
+                self.log(f"Miniconda 설치 실패 (exit code: {result.returncode})", "ERROR")
+                return False
+        except subprocess.TimeoutExpired:
+            self.log("Miniconda 설치 시간 초과 (10분)", "ERROR")
+            return False
+        except Exception as e:
+            self.log(f"Miniconda 설치 실행 실패: {e}", "ERROR")
+            return False
 
         # 설치 파일 정리
         if os.path.isfile(MINICONDA_INSTALLER):
             os.remove(MINICONDA_INSTALLER)
 
-        if not success:
-            self.log("Miniconda 설치 실패", "ERROR")
-            return False
-
-        # conda 존재 확인
+        # 설치 완료 대기 — conda.exe 존재 확인 (최대 30초)
         conda_exe = os.path.join(MINICONDA_USER, "Scripts", "conda.exe")
+        for i in range(10):
+            if os.path.isfile(conda_exe):
+                break
+            self.log(f"conda.exe 대기 중... ({(i+1)*3}초)")
+            time.sleep(3)
+
         if not os.path.isfile(conda_exe):
-            self.log("Miniconda 설치 확인 실패: conda.exe를 찾을 수 없습니다.", "ERROR")
+            self.log(f"Miniconda 설치 확인 실패: conda.exe를 찾을 수 없습니다.", "ERROR")
+            self.log(f"확인 경로: {conda_exe}")
             return False
 
         # 버전 확인
