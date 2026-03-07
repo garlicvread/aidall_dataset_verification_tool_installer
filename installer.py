@@ -59,33 +59,48 @@ class InstallerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("AidALL 데이터셋 검증 도구 설치 마법사")
-        self.root.geometry("900x650")
+        self.root.geometry("1024x768")
         self.root.resizable(False, False)
         self.root.configure(bg="#1a1a2e")
 
         self._build_ui()
         self.cancelled = False
 
-    def _build_ui(self):
-        # 헤더
-        header = tk.Frame(self.root, bg="#16213e", height=100)
-        header.pack(fill=tk.X)
-        header.pack_propagate(False)
+    ASCII_ART = (
+        "   _/_/    _/        _/    _/_/    _/        _/            _/_/_/\n"
+        "_/    _/        _/_/_/  _/    _/  _/        _/              _/    _/_/_/      _/_/_/\n"
+        "_/_/_/_/  _/  _/    _/  _/_/_/_/  _/        _/              _/    _/    _/  _/\n"
+        "_/    _/  _/  _/    _/  _/    _/  _/        _/              _/    _/    _/  _/\n"
+        "_/    _/  _/    _/_/_/  _/    _/  _/_/_/_/  _/_/_/_/      _/_/_/  _/    _/    _/_/_/  _/"
+    )
 
-        tk.Label(
-            header,
-            text="AidALL Inc.",
-            font=("Consolas", 28, "bold"),
+    def _build_ui(self):
+        # ASCII 아트 헤더
+        ascii_frame = tk.Frame(self.root, bg="#0f0f23")
+        ascii_frame.pack(fill=tk.X)
+
+        self.ascii_label = tk.Label(
+            ascii_frame,
+            text=self.ASCII_ART,
+            font=("Consolas", 8),
             fg="#00ff88",
-            bg="#16213e",
-        ).pack(pady=(15, 0))
+            bg="#0f0f23",
+            justify=tk.LEFT,
+            anchor="w",
+        )
+        self.ascii_label.pack(padx=15, pady=(10, 5))
+
+        # 헤더
+        header = tk.Frame(self.root, bg="#16213e")
+        header.pack(fill=tk.X)
+
         tk.Label(
             header,
             text="데이터셋 검증 도구 설치 마법사",
             font=("맑은 고딕", 15),
             fg="#e0e0e0",
             bg="#16213e",
-        ).pack()
+        ).pack(pady=8)
 
         # 진행 상태 바
         progress_frame = tk.Frame(self.root, bg="#1a1a2e")
@@ -188,8 +203,20 @@ class InstallerApp:
         self.install_btn.configure(state=tk.DISABLED)
         self.cancel_btn.configure(state=tk.NORMAL)
         self.cancelled = False
-        thread = threading.Thread(target=self._install_sequence, daemon=True)
+        thread = threading.Thread(target=self._animate_then_install, daemon=True)
         thread.start()
+
+    def _animate_then_install(self):
+        """ASCII 아트 스크롤 애니메이션 후 설치 진행"""
+        lines = self.ASCII_ART.split("\n")
+        for offset in range(40):
+            if self.cancelled:
+                return
+            scrolled = "\n".join(line[offset:] for line in lines)
+            self.root.after(0, lambda t=scrolled: self.ascii_label.configure(text=t))
+            time.sleep(0.04)
+        self.root.after(0, lambda: self.ascii_label.configure(text=self.ASCII_ART))
+        self._install_sequence()
 
     def _run_cmd(self, cmd, description=None, shell=True):
         """명령어 실행 + 로그"""
