@@ -18,6 +18,7 @@ irm https://raw.githubusercontent.com/garlicvread/aidall_dataset_verification_to
 3. **"관리자 권한으로 실행"** 을 클릭합니다
 4. "이 앱이 변경할 수 있도록 허용하시겠어요?" 라는 팝업이 나오면 **"예"** 를 클릭합니다
 5. 파란색 창이 열리면, 위의 명령어를 복사하여 붙여넣고 **Enter** 키를 누릅니다
+6. 설치를 시작할지 물어보면, 키보드에서 **Y** 키를 누르고 **Enter** 키를 누릅니다
 
 ## 설치되는 항목
 

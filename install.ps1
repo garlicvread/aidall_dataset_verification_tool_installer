@@ -66,6 +66,10 @@ Write-Host "============================================" -ForegroundColor White
 Write-Host ""
 
 # 설치 동의
+Write-Host ""
+Write-Host "설치를 원하시면 키보드에서 Y 키를 누르고 Enter 키를 눌러 주세요." -ForegroundColor Yellow
+Write-Host "설치를 원하지 않으시면 N 키를 누르고 Enter 키를 눌러 주세요." -ForegroundColor Yellow
+Write-Host ""
 $confirm = Read-Host "설치를 시작하시겠습니까? (Y/N)"
 if ($confirm -ne "Y" -and $confirm -ne "y") {
     Write-Log "[INFO] 사용자가 설치를 취소했습니다."
@@ -82,6 +86,8 @@ if (Test-Path $MinicondaSystem) { $minicondaPaths += $MinicondaSystem }
 if ($minicondaPaths.Count -gt 0) {
     Write-Slow "[WARN] 기존 Miniconda 설치가 발견되었습니다."
     Write-Slow "       새로운 Miniconda를 설치하려면 기존 설치를 제거해야 합니다."
+    Write-Host ""
+    Write-Host "제거를 원하시면 키보드에서 Y 키를 누르고 Enter 키를 눌러 주세요." -ForegroundColor Yellow
     Write-Host ""
     $remove = Read-Host "기존 Miniconda를 제거하시겠습니까? (Y/N)"
     if ($remove -ne "Y" -and $remove -ne "y") {
