@@ -368,11 +368,26 @@ call :log "[INFO] 바로가기 생성 시작"
 echo.
 timeout /t 1 /nobreak >nul
 
+:: run_labelme.bat과 ascii_art.bat를 AidALL 폴더로 복사
+copy /y "%~dp0run_labelme.bat" "%USERPROFILE%\Desktop\AidALL\run_labelme.bat" >nul
+if errorlevel 1 (
+    call :printslow "[ERROR] run_labelme.bat 복사 실패"
+    call :log "[ERROR] run_labelme.bat 복사 실패"
+    exit /b 1
+)
+copy /y "%~dp0ascii_art.bat" "%USERPROFILE%\Desktop\AidALL\ascii_art.bat" >nul
+if errorlevel 1 (
+    call :printslow "[ERROR] ascii_art.bat 복사 실패"
+    call :log "[ERROR] ascii_art.bat 복사 실패"
+    exit /b 1
+)
+call :log "[INFO] run_labelme.bat, ascii_art.bat 복사 완료"
+
 echo Set oWS = WScript.CreateObject("WScript.Shell") > "%TEMP%\CreateShortcut.vbs"
 echo sLinkFile = "%USERPROFILE%\Desktop\AidALL\LabelMe.lnk" >> "%TEMP%\CreateShortcut.vbs"
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> "%TEMP%\CreateShortcut.vbs"
-echo oLink.TargetPath = "%~dp0run_labelme.bat" >> "%TEMP%\CreateShortcut.vbs"
-echo oLink.WorkingDirectory = "%~dp0" >> "%TEMP%\CreateShortcut.vbs"
+echo oLink.TargetPath = "%USERPROFILE%\Desktop\AidALL\run_labelme.bat" >> "%TEMP%\CreateShortcut.vbs"
+echo oLink.WorkingDirectory = "%USERPROFILE%\Desktop\AidALL" >> "%TEMP%\CreateShortcut.vbs"
 echo oLink.Save >> "%TEMP%\CreateShortcut.vbs"
 
 cscript //nologo "%TEMP%\CreateShortcut.vbs"
