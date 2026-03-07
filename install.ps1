@@ -33,13 +33,35 @@ function Write-Slow {
 }
 
 function Show-AsciiArt {
-    Write-Host ""
-    Write-Host "   _/_/    _/        _/    _/_/    _/        _/            _/_/_/" -ForegroundColor Green
-    Write-Host "_/    _/        _/_/_/  _/    _/  _/        _/              _/    _/_/_/      _/_/_/" -ForegroundColor Green
-    Write-Host "_/_/_/_/  _/  _/    _/  _/_/_/_/  _/        _/              _/    _/    _/  _/" -ForegroundColor Green
-    Write-Host "_/    _/  _/  _/    _/  _/    _/  _/        _/              _/    _/    _/  _/" -ForegroundColor Green
-    Write-Host "_/    _/  _/    _/_/_/  _/    _/  _/_/_/_/  _/_/_/_/      _/_/_/  _/    _/    _/_/_/  _/" -ForegroundColor Green
-    Write-Host ""
+    $lines = @(
+        ""
+        "        _/_/    _/        _/    _/_/    _/        _/            _/_/_/"
+        "     _/    _/        _/_/_/  _/    _/  _/        _/              _/    _/_/_/      _/_/_/"
+        "    _/_/_/_/  _/  _/    _/  _/_/_/_/  _/        _/              _/    _/    _/  _/"
+        "   _/    _/  _/  _/    _/  _/    _/  _/        _/              _/    _/    _/  _/"
+        "  _/    _/  _/    _/_/_/  _/    _/  _/_/_/_/  _/_/_/_/      _/_/_/  _/    _/    _/_/_/  _/"
+        ""
+    )
+
+    # 정적 표시
+    foreach ($line in $lines) {
+        Write-Host $line -ForegroundColor Green
+    }
+    Start-Sleep -Seconds 1
+
+    # 스크롤 애니메이션 (왼쪽으로 밀려나감)
+    for ($offset = 0; $offset -le 100; $offset++) {
+        Clear-Host
+        foreach ($line in $lines) {
+            if ($line.Length -gt $offset) {
+                Write-Host $line.Substring($offset) -ForegroundColor Green
+            } else {
+                Write-Host ""
+            }
+        }
+        Start-Sleep -Milliseconds 50
+    }
+    Clear-Host
 }
 
 # --- 메인 설치 ---
@@ -103,11 +125,20 @@ if ($minicondaPaths.Count -gt 0) {
         $uninstaller = Join-Path $path "Uninstall-Miniconda3.exe"
         if (Test-Path $uninstaller) {
             Write-Slow "[INFO] Miniconda Uninstaller로 제거를 시도합니다..."
-            $proc = Start-Process -FilePath $uninstaller -ArgumentList "/S" -Wait -PassThru
+            $proc = Start-Process -FilePath $uninstaller -ArgumentList "/S" -PassThru
+            $elapsed = 0
+            while (-not $proc.HasExited) {
+                $min = [math]::Floor($elapsed / 60)
+                $sec = $elapsed % 60
+                Write-Host -NoNewline "`r  제거 중... (${min}분 ${sec}초 경과)  " -ForegroundColor Cyan
+                Start-Sleep -Seconds 1
+                $elapsed++
+            }
+            Write-Host ""
             if ($proc.ExitCode -ne 0) {
                 Write-Slow "[WARN] Uninstaller 실행 중 문제 발생. 수동 삭제를 시도합니다."
             }
-            Start-Sleep -Seconds 5
+            Start-Sleep -Seconds 3
         }
 
         if (Test-Path $path) {
@@ -150,9 +181,33 @@ try {
 }
 
 # --- Miniconda 설치 ---
-Write-Slow "[INFO] Miniconda를 설치합니다... (수 분이 소요될 수 있습니다)"
+Write-Slow "[INFO] Miniconda를 설치합니다..."
+Write-Host ""
+Write-Host "============================================" -ForegroundColor Yellow
+Write-Host "  설치에 5~10분 정도 소요될 수 있습니다." -ForegroundColor Yellow
+Write-Host "  화면이 멈춘 것처럼 보여도 정상입니다." -ForegroundColor Yellow
+Write-Host "  창을 닫지 마시고 기다려 주세요." -ForegroundColor Yellow
+Write-Host "============================================" -ForegroundColor Yellow
+Write-Host ""
 
-$proc = Start-Process -FilePath $MinicondaInstaller -ArgumentList "/S" -Wait -PassThru
+$installArgs = "/S /AddToPath=0 /RegisterPython=0 /D=$MinicondaUser"
+$proc = Start-Process -FilePath $MinicondaInstaller -ArgumentList $installArgs -PassThru
+
+# 설치 진행률 애니메이션
+$spinner = @("▓░░░░░░░░░", "▓▓░░░░░░░░", "▓▓▓░░░░░░░", "▓▓▓▓░░░░░░", "▓▓▓▓▓░░░░░", "▓▓▓▓▓▓░░░░", "▓▓▓▓▓▓▓░░░", "▓▓▓▓▓▓▓▓░░", "▓▓▓▓▓▓▓▓▓░", "▓▓▓▓▓▓▓▓▓▓")
+$i = 0
+$elapsed = 0
+while (-not $proc.HasExited) {
+    $bar = $spinner[$i % $spinner.Count]
+    $min = [math]::Floor($elapsed / 60)
+    $sec = $elapsed % 60
+    Write-Host -NoNewline "`r  설치 중... [$bar] (${min}분 ${sec}초 경과)  " -ForegroundColor Cyan
+    Start-Sleep -Seconds 1
+    $elapsed++
+    $i++
+}
+Write-Host ""
+
 if ($proc.ExitCode -ne 0) {
     Write-Host "[ERROR] Miniconda 설치 실패 (exit code: $($proc.ExitCode))" -ForegroundColor Red
     exit 1
