@@ -7,20 +7,12 @@ setlocal enabledelayedexpansion
 
 :: 데이터셋 검증 도구 설치 디렉토리 생성
 if not exist "%USERPROFILE%\Desktop\AidALL" (
-    echo.
-    echo [DEBUG]: 바탕화면에 AidALL 폴더 생성을 시도합니다...
-    pause
     mkdir "%USERPROFILE%\Desktop\AidALL"
-    echo.
-    echo after mkdir, errorlevel=%errorlevel%
-    echo [DEBUG]: 에러코드 %errorlevel%, 디렉토리 생성 성공
     if errorlevel 1 (
         echo.
         echo [ERROR] 디렉토리 생성 실패
         exit /b 1
     )
-    echo [DEBUG]: 바탕화면에 AidALL 폴더가 생성되었습니다.
-    echo.
 )
 
 :: 로그 설정
@@ -32,9 +24,6 @@ set "CURRENT_DATETIME=%date%_%time%"
 
 :: time 변수에서 오전/오후 정보 추출
 for /f "tokens=1 delims= " %%a in ("%time%") do set "HOUR=%%a"
-
-:: HOUR 변수 값 출력
-rem echo HOUR 변수 값: "%HOUR%"
 
 :: HOUR 변수에서 콜론(:)과 마침표(.) 제거
 set "HOUR=!HOUR::=!"
@@ -80,10 +69,6 @@ set "DD=!CURRENT_DATETIME:~6,2!"
 set "MN=!CURRENT_DATETIME:~10,2!"
 set "SS=!CURRENT_DATETIME:~12,2!"
 set "CURRENT_DATETIME=!YYYY!-!MM!-!DD!_!HH!-!MN!-!SS!"
-
-echo [DEBUG] 에러코드 !errorlevel!, 날짜 및 시간 정보 처리 완료
-echo 현재시각=!CURRENT_DATETIME!
-pause
 
 set "TIMESTAMP=!CURRENT_DATETIME!"
 
