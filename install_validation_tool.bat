@@ -117,6 +117,52 @@ call :log "[INFO] Miniconda 설치 검사 시작"
 echo.
 timeout /t 1 /nobreak >nul
 
+:: 기존 Miniconda가 존재하면 삭제 동의를 구함
+if exist "%USERPROFILE%\miniconda3" if exist "C:\ProgramData\miniconda3" (
+    call :printslow "[WARN] 기존 Miniconda 설치가 발견되었습니다."
+    call :printslow "       새로운 Miniconda를 설치하려면 기존 설치를 제거해야 합니다."
+    echo.
+    choice /c yn /n /m "기존 Miniconda를 제거하시겠습니까? (Y/N)"
+    if errorlevel 2 (
+        call :log "[INFO] 사용자가 기존 Miniconda 제거를 거부했습니다."
+        call :printslow "[INFO] 설치를 중단합니다."
+        exit /b 0
+    )
+    call :log "[INFO] 사용자가 기존 Miniconda 제거에 동의했습니다."
+    goto :miniconda_removal
+)
+if exist "%USERPROFILE%\miniconda3" (
+    call :printslow "[WARN] 기존 Miniconda 설치가 발견되었습니다."
+    call :printslow "       새로운 Miniconda를 설치하려면 기존 설치를 제거해야 합니다."
+    echo.
+    choice /c yn /n /m "기존 Miniconda를 제거하시겠습니까? (Y/N)"
+    if errorlevel 2 (
+        call :log "[INFO] 사용자가 기존 Miniconda 제거를 거부했습니다."
+        call :printslow "[INFO] 설치를 중단합니다."
+        exit /b 0
+    )
+    call :log "[INFO] 사용자가 기존 Miniconda 제거에 동의했습니다."
+    goto :miniconda_removal
+)
+if exist "C:\ProgramData\miniconda3" (
+    call :printslow "[WARN] 기존 Miniconda 설치가 발견되었습니다."
+    call :printslow "       새로운 Miniconda를 설치하려면 기존 설치를 제거해야 합니다."
+    echo.
+    choice /c yn /n /m "기존 Miniconda를 제거하시겠습니까? (Y/N)"
+    if errorlevel 2 (
+        call :log "[INFO] 사용자가 기존 Miniconda 제거를 거부했습니다."
+        call :printslow "[INFO] 설치를 중단합니다."
+        exit /b 0
+    )
+    call :log "[INFO] 사용자가 기존 Miniconda 제거에 동의했습니다."
+    goto :miniconda_removal
+)
+
+:: Miniconda가 어디에도 없으면 삭제 섹션 건너뛰기
+if not exist "%USERPROFILE%\miniconda3" if not exist "C:\ProgramData\miniconda3" goto :miniconda_install
+
+:miniconda_removal
+
 :: 사용자 프로필 경로 확인
 if exist "%USERPROFILE%\miniconda3" (
    call :printslow "[INFO] 기존 Miniconda 디렉토리를 발견했습니다: %USERPROFILE%\miniconda3"
@@ -218,6 +264,8 @@ if exist "C:\ProgramData\miniconda3" (
    call :log "[INFO] Miniconda 제거 완료"
 )
 
+
+:miniconda_install
 call :printslow "[INFO] Miniconda 최신 버전을 다운로드합니다..."
 call :log "[INFO] Miniconda 다운로드 시작"
 echo.
