@@ -5,11 +5,13 @@ Windows GUI 인스톨러 (tkinter)
 """
 
 import os
+import stat
 import sys
 import subprocess
 import threading
 import shutil
 import logging
+import time
 import urllib.request
 from datetime import datetime
 from pathlib import Path
@@ -294,6 +296,30 @@ class InstallerApp:
         )
         close_btn.pack(side=tk.RIGHT, padx=(10, 0))
 
+    # --- 유틸리티 ---
+
+    @staticmethod
+    def _remove_readonly(func, path, _excinfo):
+        """읽기전용 속성 해제 후 재시도"""
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+
+    def _rmtree_retry(self, path, max_retries=5, delay=3):
+        """shutil.rmtree를 재시도 + 읽기전용 해제로 실행"""
+        for attempt in range(1, max_retries + 1):
+            try:
+                shutil.rmtree(path, onerror=self._remove_readonly)
+                self.log(f"삭제 완료: {path}")
+                return True
+            except OSError as e:
+                if attempt < max_retries:
+                    self.log(f"삭제 재시도 {attempt}/{max_retries} (대기 {delay}초)...", "WARN")
+                    time.sleep(delay)
+                else:
+                    self.log(f"디렉토리 삭제 실패 ({max_retries}회 시도): {e}", "ERROR")
+                    return False
+        return False
+
     # --- 각 설치 단계 구현 ---
 
     def _step_create_dirs(self):
@@ -366,11 +392,7 @@ class InstallerApp:
 
             if os.path.isdir(path):
                 self.log(f"Miniconda 디렉토리 삭제: {path}")
-                try:
-                    shutil.rmtree(path)
-                    self.log(f"삭제 완료: {path}")
-                except OSError as e:
-                    self.log(f"디렉토리 삭제 실패: {e}", "ERROR")
+                if not self._rmtree_retry(path):
                     return False
 
         return True
