@@ -30,10 +30,10 @@ set "HOUR=!HOUR::=!"
 set "HOUR=!HOUR:.=!"
 
 :: HOUR 변수를 숫자로 변환
-set /a "HOUR_TEMP=%HOUR%" 
+set /a "HOUR_TEMP=%HOUR%"
 if errorlevel 1 (
     echo [ERROR] HOUR 변수를 숫자로 변환하는 중 오류 발생: "%HOUR%"
-    pause  
+    pause
     exit /b 1
 ) else (
     set "HOUR=%HOUR_TEMP%"
@@ -54,13 +54,13 @@ set "CURRENT_DATETIME=!CURRENT_DATETIME:-=!"
 set "CURRENT_DATETIME=!CURRENT_DATETIME::=!"
 set "CURRENT_DATETIME=!CURRENT_DATETIME:.=!"
 set "CURRENT_DATETIME=!CURRENT_DATETIME:/=!"
-set "CURRENT_DATETIME=!CURRENT_DATETIME: =!" 
+set "CURRENT_DATETIME=!CURRENT_DATETIME: =!"
 set "CURRENT_DATETIME=!CURRENT_DATETIME:~0,14!"
 
 :: 시간 부분 추출 및 오전/오후 시간으로 변환
 set "HH=!CURRENT_DATETIME:~8,2!"
 set /a "HH=!HH! + !HOUR_OFFSET!"
-if !HH! lss 10 set "HH=0!HH!" 
+if !HH! lss 10 set "HH=0!HH!"
 
 :: YYYY-MM-DD_HH-MM-SS 형식으로 변환
 set "YYYY=!CURRENT_DATETIME:~0,4!"
@@ -174,7 +174,7 @@ if exist "%USERPROFILE%\miniconda3" (
        call :printslow "[INFO] Miniconda Uninstaller를 발견했습니다."
        echo.
        timeout /t 1 /nobreak >nul
-       
+
        call :printslow "[INFO] Miniconda Uninstaller로 제거를 시도합니다..."
        echo.
        timeout /t 1 /nobreak >nul
@@ -195,12 +195,12 @@ if exist "%USERPROFILE%\miniconda3" (
        call :printslow "[WARN] Miniconda Uninstaller가 없습니다. 설치가 손상되었을 수 있습니다."
        echo.
        timeout /t 1 /nobreak >nul
-       
+
        call :printslow "[INFO] 기존 Miniconda 디렉토리를 삭제합니다..."
        call :log "[INFO] 수동으로 Miniconda 디렉토리 삭제 시도"
        echo.
    )
-   
+
    if exist "%USERPROFILE%\miniconda3" (
        rmdir /s /q "%USERPROFILE%\miniconda3"
        if errorlevel 1 (
@@ -225,7 +225,7 @@ if exist "C:\ProgramData\miniconda3" (
        call :printslow "[INFO] Miniconda Uninstaller를 발견했습니다."
        echo.
        timeout /t 1 /nobreak >nul
-       
+
        call :printslow "[INFO] Miniconda Uninstaller로 제거를 시도합니다..."
        echo.
        timeout /t 1 /nobreak >nul
@@ -246,12 +246,12 @@ if exist "C:\ProgramData\miniconda3" (
        call :printslow "[WARN] Miniconda Uninstaller가 없습니다. 설치가 손상되었을 수 있습니다."
        echo.
        timeout /t 1 /nobreak >nul
-       
+
        call :printslow "[INFO] 기존 Miniconda 디렉토리를 삭제합니다..."
        call :log "[INFO] 수동으로 Miniconda 디렉토리 삭제 시도"
        echo.
    )
-   
+
    if exist "C:\ProgramData\miniconda3" (
        rmdir /s /q "C:\ProgramData\miniconda3"
        if errorlevel 1 (
