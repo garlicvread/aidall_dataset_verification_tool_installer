@@ -59,7 +59,7 @@ class InstallerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("AidALL 데이터셋 검증 도구 설치 마법사")
-        self.root.geometry("700x520")
+        self.root.geometry("900x650")
         self.root.resizable(False, False)
         self.root.configure(bg="#1a1a2e")
 
@@ -68,21 +68,21 @@ class InstallerApp:
 
     def _build_ui(self):
         # 헤더
-        header = tk.Frame(self.root, bg="#16213e", height=80)
+        header = tk.Frame(self.root, bg="#16213e", height=100)
         header.pack(fill=tk.X)
         header.pack_propagate(False)
 
         tk.Label(
             header,
             text="AidALL Inc.",
-            font=("Consolas", 22, "bold"),
+            font=("Consolas", 28, "bold"),
             fg="#00ff88",
             bg="#16213e",
-        ).pack(pady=(12, 0))
+        ).pack(pady=(15, 0))
         tk.Label(
             header,
             text="데이터셋 검증 도구 설치 마법사",
-            font=("맑은 고딕", 12),
+            font=("맑은 고딕", 15),
             fg="#e0e0e0",
             bg="#16213e",
         ).pack()
@@ -94,7 +94,7 @@ class InstallerApp:
         self.progress_label = tk.Label(
             progress_frame,
             text="설치 준비 중...",
-            font=("맑은 고딕", 10),
+            font=("맑은 고딕", 13),
             fg="#aaaaaa",
             bg="#1a1a2e",
             anchor="w",
@@ -115,7 +115,7 @@ class InstallerApp:
             height=16,
             bg="#0f0f23",
             fg="#00ff88",
-            font=("Consolas", 10),
+            font=("Consolas", 12),
             state=tk.DISABLED,
             wrap=tk.WORD,
             borderwidth=1,
@@ -135,7 +135,7 @@ class InstallerApp:
             btn_frame,
             text="취소",
             command=self._cancel,
-            font=("맑은 고딕", 10),
+            font=("맑은 고딕", 13),
             bg="#e74c3c",
             fg="white",
             width=10,
@@ -147,7 +147,7 @@ class InstallerApp:
             btn_frame,
             text="설치 시작",
             command=self._start_install,
-            font=("맑은 고딕", 10, "bold"),
+            font=("맑은 고딕", 13, "bold"),
             bg="#00ff88",
             fg="#1a1a2e",
             width=15,
@@ -288,7 +288,7 @@ class InstallerApp:
             self.cancel_btn.master,
             text="닫기",
             command=self.root.destroy,
-            font=("맑은 고딕", 10),
+            font=("맑은 고딕", 13),
             bg="#00ff88",
             fg="#1a1a2e",
             width=10,
@@ -568,19 +568,19 @@ class InstallerApp:
 
 
 def main():
+    # DPI 스케일링 (Tk 초기화 전에 호출)
+    try:
+        from ctypes import windll
+        windll.shcore.SetProcessDpiAwareness(2)  # Per-Monitor DPI Aware
+    except Exception:
+        pass
+
     root = tk.Tk()
 
     # 윈도우 아이콘 설정 (있을 경우)
     icon_path = get_resource("icon.ico")
     if os.path.isfile(icon_path):
         root.iconbitmap(icon_path)
-
-    # DPI 스케일링
-    try:
-        from ctypes import windll
-        windll.shcore.SetProcessDpiAwareness(1)
-    except Exception:
-        pass
 
     app = InstallerApp(root)
     root.mainloop()
