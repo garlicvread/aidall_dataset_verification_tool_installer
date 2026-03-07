@@ -59,10 +59,12 @@ function Show-AsciiArt {
                 Write-Host ""
             }
         }
-        Start-Sleep -Milliseconds 25
+        Start-Sleep -Milliseconds 10
     }
     Clear-Host
 }
+
+try {
 
 # --- 메인 설치 ---
 Clear-Host
@@ -171,7 +173,7 @@ Write-Slow "       (파일 크기 약 100MB, 잠시 기다려 주십시오)"
 
 try {
     $ProgressPreference = 'SilentlyContinue'
-    Invoke-WebRequest -Uri $MinicondaURL -OutFile $MinicondaInstaller -UseBasicParsing
+    Invoke-WebRequest -Uri $MinicondaURL -OutFile $MinicondaInstaller -UseBasicParsing -ErrorAction Stop
     $ProgressPreference = 'Continue'
     Write-Slow "[INFO] Miniconda 다운로드 완료"
 } catch {
@@ -234,18 +236,26 @@ if (-not (Test-Path $condaExe)) {
 }
 
 Write-Slow "[INFO] Miniconda 설치 완료"
-$ErrorActionPreference = "Continue"
-& $condaExe --version 2>&1 | ForEach-Object { Write-Host $_ }
-$ErrorActionPreference = "Stop"
+& $condaExe --version
 Write-Host ""
+
+# activate.bat 확인
+$activate = "$MinicondaUser\Scripts\activate.bat"
+$waited = 0
+while (-not (Test-Path $activate) -and $waited -lt 15) {
+    Write-Log "[INFO] activate.bat 대기 중..."
+    Start-Sleep -Seconds 3
+    $waited += 3
+}
+if (-not (Test-Path $activate)) {
+    Write-Host "[ERROR] activate.bat를 찾을 수 없습니다." -ForegroundColor Red
+    exit 1
+}
 
 # --- Conda 가상환경 생성 ---
 Write-Slow "[INFO] Conda 가상환경을 생성합니다..."
 
-$activate = "$MinicondaUser\Scripts\activate.bat"
-$ErrorActionPreference = "Continue"
-& cmd /c "call `"$activate`" && conda create -n verify_results python=3.12 -y" 2>&1 | ForEach-Object { Write-Host $_ }
-$ErrorActionPreference = "Stop"
+& cmd /c "call `"$activate`" && conda create -n verify_results python=3.12 -y"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Conda 가상환경 생성 실패" -ForegroundColor Red
     exit 1
@@ -258,9 +268,7 @@ Write-Host ""
 # --- LabelMe 설치 ---
 Write-Slow "[INFO] Labelme를 설치합니다..."
 
-$ErrorActionPreference = "Continue"
-& cmd /c "call `"$activate`" verify_results && pip install labelme" 2>&1 | ForEach-Object { Write-Host $_ }
-$ErrorActionPreference = "Stop"
+& cmd /c "call `"$activate`" verify_results && pip install labelme"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Labelme 설치 실패" -ForegroundColor Red
     exit 1
@@ -272,9 +280,7 @@ Write-Host ""
 Write-Slow "[INFO] 데이터셋 다운로드를 시작합니다..."
 Write-Slow "       데이터셋 크기는 약 60GB 정도입니다."
 
-$ErrorActionPreference = "Continue"
-& cmd /c "call `"$activate`" verify_results && pip install -U gdown --quiet && cd /d `"$AidALLDir`" && gdown --folder $GDriveFolderURL" 2>&1 | ForEach-Object { Write-Host $_ }
-$ErrorActionPreference = "Stop"
+& cmd /c "call `"$activate`" verify_results && pip install -U gdown --quiet && cd /d `"$AidALLDir`" && gdown --folder $GDriveFolderURL"
 if ($LASTEXITCODE -ne 0) {
     Write-Log "[WARN] Google Drive 자동 다운로드 실패"
     Write-Slow "[INFO] 웹 브라우저를 통해 직접 다운로드해 주시기 바랍니다."
@@ -291,7 +297,7 @@ foreach ($file in @("run_labelme.bat", "ascii_art.bat")) {
     $url = "$RepoBase/$file"
     $dest = "$AidALLDir\$file"
     try {
-        Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing
+        Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing -ErrorAction Stop
         Write-Log "[INFO] $file 다운로드 완료"
     } catch {
         Write-Host "[WARN] $file 다운로드 실패: $_" -ForegroundColor Yellow
@@ -313,7 +319,16 @@ Write-Slow "바탕화면의 AidALL 폴더에서 LabelMe 바로가기를 실행�
 Write-Host "============================================" -ForegroundColor Green
 Write-Host ""
 Write-Slow "[INFO] 모든 프로세스가 정상적으로 완료되었습니다."
+
+} catch {
+    Write-Host ""
+    Write-Host "[FATAL ERROR] $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "[위치] Line $($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
+    Write-Host ""
+    Write-Log "[FATAL] $($_.Exception.Message)"
+}
+
 Write-Host ""
 Write-Host "명령 프롬프트를 닫으시려면 아무 키나 눌러 주십시오." -ForegroundColor White
 Write-Host "Press any key to close..." -ForegroundColor White
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+try { $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") } catch { Read-Host }
